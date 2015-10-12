@@ -250,7 +250,7 @@ void add_number(uint8_t *V, uint16_t N, uint8_t *dest){
 void add_vector(uint8_t *V1, uint8_t *V2, uint8_t *dest){
 	uint32_t current_sum = 0;
 	for(size_t i = 0; i < 64; ++i){
-		current_sum += V1[i] + V2[i];
+		current_sum += (uint32_t)V1[i] + (uint32_t)V2[i];
 		dest[i] = (uint8_t)(current_sum & 255);
 		current_sum >>= 8;
 	}
@@ -260,7 +260,7 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 	uint8_t *M = (uint8_t*)data,
 	        h[64],
 			N[64],
-			*m,
+			m[64],
 			SIGMA[64],
 			ZEROS[64];
 
@@ -272,34 +272,29 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 	}
 
 	while(data_bits_count >= 512){
-		m = M;
 		M = M + 64; //сдвигаем на 512 бит
 		data_bits_count -= 512;
 
-		G(N,h,m,h);
+		G(N,h,M,h);
 		add_number(N, 512, N);
-		add_vector(SIGMA, m, SIGMA);
+		add_vector(SIGMA, M, SIGMA);
 	}
 
-	uint8_t result[64];
 	int bytes_count = data_bits_count >> 3; //высчитываем количество оставшихся байт
 	if(data_bits_count & 7){
 		++bytes_count;
 	}
 	for(size_t i = 0; i < bytes_count; ++i ){
-		result[i] = M[i]; //копируем оставшиеся значения
+		m[i] = M[i]; //копируем оставшиеся значения
 	}
 	for(size_t i = bytes_count; i < 64; ++i){
-		result[i] = 0; //записываем нули до конца
+		m[i] = 0; //записываем нули до конца
 	}
-	result[bytes_count] += (1U << (data_bits_count & 7) ); //записываем единицу
+	m[bytes_count] += (1U << (data_bits_count & 7) ); //записываем единицу
 
-	G(N,h,result,result);
-
-	printResult(result, 64);
-
+	G(N,h,m,h);
 	add_number(N, (uint16_t)data_bits_count, N);
-	add_vector(SIGMA,result,SIGMA);
+	add_vector(SIGMA,m,SIGMA);
 
 	G(ZEROS, h, N, h);
 
@@ -310,7 +305,7 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 		case HASH_256:
 			G(ZEROS, h, SIGMA, N);
 			for (size_t i = 0; i < 32; ++i) {
-				dest[i] = N[256+i];
+				dest[i] = N[32+i];
 			}
 			break;
 		default:
@@ -326,8 +321,8 @@ int main (void){
 
 	uint8_t *dest[64];
 
-	Encrypt(HASH_512, ar.array, 504, dest);
-	printResult(dest, 64);
+	Encrypt(HASH_256, ar.array, 504, dest);
+	printResult(dest, 32);
 
 	return 0;
 }
