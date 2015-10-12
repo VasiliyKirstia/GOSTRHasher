@@ -64,7 +64,7 @@ typedef struct {
 
 ArrayOfByte convertToArray(char *str, long long int length){
 	long long int a_len = (length >> 1) + (length & 1); //количество байтов требуемое для хранения результата.
-	uint8_t *buff = malloc(sizeof(uint8_t) * a_len);
+	uint8_t *buff = calloc(a_len, sizeof(uint8_t));
 
 	long long int j = 0;
 	for(long long int i = length - 1; i > -1; --i){
@@ -167,7 +167,7 @@ void L(uint8_t *arg, uint8_t *dest){
 			current_value = arg[n*8 + i];
 			for(size_t j = 0; j < 8; ++j){
 				if(current_value & 1){
-					local_sum ^= Matrix_64[i*8 + j];
+					local_sum ^= Matrix_64[63 - (i*8 + j)];
 				}
 				current_value >>= 1;
 			}
@@ -186,9 +186,7 @@ void G(uint8_t *N, uint8_t *h, uint8_t *m, uint8_t *dest){
 	X(N, h, buf1);
 	S(buf1, buf2);
 	P(buf2, buf1);
-	//printResult(buf1, 64);
 	L(buf1, buf2);
-	printResult(buf2, 64);
 
 	uint8_t KM1[64];
 	memcpy(KM1, buf2, sizeof(uint8_t)*64);
@@ -297,6 +295,9 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 	result[bytes_count] += (1U << (data_bits_count & 7) ); //записываем единицу
 
 	G(N,h,result,result);
+
+	printResult(result, 64);
+
 	add_number(N, (uint16_t)data_bits_count, N);
 	add_vector(SIGMA,result,SIGMA);
 
