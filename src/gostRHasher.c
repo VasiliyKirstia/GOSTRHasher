@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <strings.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+
+
+
 typedef enum{HASH_512,HASH_256}HashCodeLength;
 
 // Матрица над полем GF(2) в шестнадцатеричном виде
@@ -181,23 +189,19 @@ void L(uint8_t *arg, uint8_t *dest){
 
 void G(uint8_t *N, uint8_t *h, uint8_t *m, uint8_t *dest){
 	uint8_t buf1[64],
-			buf2[64];
+			buf2[64],
+			KM1[64],
+			temp[64];
 
 	X(N, h, buf1);
 	S(buf1, buf2);
 	P(buf2, buf1);
-	L(buf1, buf2);
-
-	uint8_t KM1[64];
-	memcpy(KM1, buf2, sizeof(uint8_t)*64);
+	L(buf1, KM1);
 
 	X(KM1, m, buf1);
 	S(buf1, buf2);
 	P(buf2, buf1);
-	L(buf1, buf2);
-
-	uint8_t temp[64];
-	memcpy(temp, buf2, sizeof(uint8_t)*64);
+	L(buf1, temp);
 
 	for(size_t i = 0; i < 12; ++i){
 
@@ -315,11 +319,17 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 }
 
 int main (void){
+	int fd = open("/tmp/f2", O_RDONLY);
+
+	struct stat fs;
+	fstat(fd, &fs);
+
+	void *data = mmap(NULL, fs.st_size, PROT_READ, MAP_SHARED, fd, 0);
+
 	uint8_t *dest[64];
 
-	Encrypt(HASH_256, NULL, 576, dest);
-	printResult(dest, 32);
-
+	Encrypt(HASH_256, data, fs.st_size * 8, dest);
+	printResult(dest, 64);
 	return 0;
 }
 
