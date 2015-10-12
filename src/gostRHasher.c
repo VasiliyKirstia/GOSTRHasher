@@ -272,12 +272,12 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 	}
 
 	while(data_bits_count >= 512){
-		M = M + 64; //сдвигаем на 512 бит
-		data_bits_count -= 512;
-
 		G(N,h,M,h);
 		add_number(N, 512, N);
 		add_vector(SIGMA, M, SIGMA);
+
+		M = M + 64; //сдвигаем на 512 бит
+		data_bits_count -= 512;
 	}
 
 	int bytes_count = data_bits_count >> 3; //высчитываем количество оставшихся байт
@@ -315,13 +315,9 @@ void Encrypt(HashCodeLength hash, void *data, size_t data_bits_count, unsigned c
 }
 
 int main (void){
-	char * message1 = "323130393837363534333231303938373635343332313039383736353433323130393837363534333231303938373635343332313039383736353433323130";
-	ArrayOfByte ar = convertToArray(message1, strlen(message1));
-	printResult(ar.array, ar.length);
-
 	uint8_t *dest[64];
 
-	Encrypt(HASH_256, ar.array, 504, dest);
+	Encrypt(HASH_256, NULL, 576, dest);
 	printResult(dest, 32);
 
 	return 0;
