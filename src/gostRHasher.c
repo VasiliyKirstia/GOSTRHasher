@@ -10,8 +10,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-
-
 typedef enum{HASH_512,HASH_256}HashCodeLength;
 
 // Матрица над полем GF(2) в шестнадцатеричном виде
